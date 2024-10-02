@@ -1,4 +1,4 @@
-module richerLog
+module github.com/yxxchange/richerLog
 
 go 1.22
 
