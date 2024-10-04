@@ -17,7 +17,7 @@ var defaultEncoderConfig = zapcore.EncoderConfig{
 	EncodeLevel:    zapcore.CapitalLevelEncoder,
 	EncodeTime:     localTimeEncoder,
 	EncodeDuration: zapcore.SecondsDurationEncoder,
-	EncodeCaller:   zapcore.ShortCallerEncoder,
+	EncodeCaller:   zapcore.FullCallerEncoder,
 	EncodeName:     zapcore.FullNameEncoder,
 }
 
@@ -40,21 +40,28 @@ type Log struct {
 	logWriter   []io.Writer
 }
 
-func WithJsonEncoder(cfg zapcore.EncoderConfig) {
-	log.encoderMode = "json"
-	log.config = cfg
+func (l *Log) WithJsonEncoder(cfg zapcore.EncoderConfig) *Log {
+	l.encoderMode = "json"
+	l.config = cfg
+	return l
 }
 
-func WithLogWriter(writers ...io.Writer) {
-	log.logWriter = writers
+func (l *Log) WithLogWriter(writers ...io.Writer) *Log {
+	l.logWriter = writers
+	return l
 }
 
-func WithConsoleEncoder(cfg zapcore.EncoderConfig) {
-	log.encoderMode = "console"
-	log.config = cfg
+func (l *Log) WithConsoleEncoder(cfg zapcore.EncoderConfig) *Log {
+	l.encoderMode = "console"
+	l.config = cfg
+	return l
 }
 
-func Init() {
+func CustomBuilder() *Log {
+	return log
+}
+
+func UseDefault() {
 	var (
 		encoder zapcore.Encoder
 		cores   []zapcore.Core
@@ -62,7 +69,18 @@ func Init() {
 	encoder = initEncoder()
 	cores = initCore(encoder)
 
-	log.logger = zap.New(zapcore.NewTee(cores...), zap.AddCaller())
+	log.logger = zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddCallerSkip(1))
+}
+
+func (l *Log) Build() {
+	var (
+		encoder zapcore.Encoder
+		cores   []zapcore.Core
+	)
+	encoder = initEncoder()
+	cores = initCore(encoder)
+
+	l.logger = zap.New(zapcore.NewTee(cores...), zap.AddCaller(), zap.AddCallerSkip(1))
 }
 
 func initEncoder() zapcore.Encoder {
